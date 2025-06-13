@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid h-100">
+    <div class="row h-100">
+        <!-- Left Panel: Input and Syntax -->
+        <div class="col-md-6 left-panel">
+            <div class="panel-content">
+                <h5 class="mb-3">Describe Your Diagram</h5>
+                
+                <!-- Input Section -->
+                <div class="input-section mb-4">
+                    <div class="input-group mb-3">
+                        <input type="text" 
+                               id="diagramPrompt" 
+                               class="form-control" 
+                               placeholder="Describe the diagram you want to create..."
+                               aria-label="Diagram description">
+                        <button class="btn btn-primary" 
+                                type="button" 
+                                id="generateBtn"
+                                onclick="generateDiagram()">
+                            <i class="fas fa-magic"></i> Generate
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Syntax Display/Edit Section -->
+                <div class="syntax-section">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6>Mermaid Syntax</h6>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" 
+                                    class="btn btn-outline-secondary" 
+                                    onclick="copySyntax()"
+                                    title="Copy syntax">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-secondary" 
+                                    onclick="clearSyntax()"
+                                    title="Clear syntax">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="syntaxEditor" 
+                              class="form-control syntax-editor" 
+                              placeholder="Mermaid syntax will appear here..."
+                              oninput="updateDiagramDebounced()"></textarea>
+                    <div id="syntaxError" class="alert alert-danger mt-2 d-none" role="alert"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Panel: Diagram Display -->
+        <div class="col-md-6 right-panel">
+            <div class="panel-content">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center">
+                        <label for="diagramType" class="me-2 mb-0">Diagram Type:</label>
+                        <select id="diagramType" class="form-select form-select-sm" style="width: auto;">
+                            {% for type in diagram_types %}
+                            <option value="{{ type.value }}">{{ type.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-sm btn-success" 
+                            onclick="exportDiagram()"
+                            title="Export as PNG">
+                        <i class="fas fa-download"></i> Export PNG
+                    </button>
+                </div>
+                
+                <!-- Diagram Display Area -->
+                <div id="diagramContainer" class="diagram-container">
+                    <div class="text-center text-muted mt-5">
+                        <i class="fas fa-project-diagram fa-3x mb-3"></i>
+                        <p>Your diagram will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/diagram.js') }}"></script>
+{% endblock %}

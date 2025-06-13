@@ -1,0 +1,175 @@
+/* Mermaid Diagram Builder Styles */
+
+/* General Layout */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    height: calc(100vh - 56px); /* Subtract navbar height */
+}
+
+.container-fluid.h-100 {
+    padding: 0;
+}
+
+.row.h-100 {
+    margin: 0;
+}
+
+/* Panels */
+.left-panel, .right-panel {
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+}
+
+.left-panel {
+    background-color: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+}
+
+.right-panel {
+    background-color: #ffffff;
+}
+
+.panel-content {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Input Section */
+.input-section {
+    margin-bottom: 20px;
+}
+
+#diagramPrompt {
+    font-size: 16px;
+}
+
+/* Syntax Editor */
+.syntax-section {
+    height: calc(100% - 120px);
+    display: flex;
+    flex-direction: column;
+}
+
+.syntax-editor {
+    flex: 1;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    border: 1px solid #454545;
+}
+
+.syntax-editor:focus {
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Diagram Container */
+.diagram-container {
+    height: calc(100% - 50px);
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.diagram-container svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Buttons */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Alerts */
+#syntaxError {
+    font-size: 14px;
+    padding: 0.5rem 1rem;
+    margin-top: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .left-panel, .right-panel {
+        height: 50vh;
+    }
+    
+    .row.h-100 {
+        flex-direction: column;
+    }
+    
+    .syntax-section {
+        height: calc(100% - 150px);
+    }
+    
+    .diagram-container {
+        height: calc(100% - 80px);
+    }
+}
+
+/* Mermaid Specific Styles */
+.mermaid {
+    text-align: center;
+}
+
+/* Dark mode for syntax editor */
+.syntax-editor::placeholder {
+    color: #6c757d;
+    opacity: 0.7;
+}
+
+/* Scrollbar styling for syntax editor */
+.syntax-editor::-webkit-scrollbar {
+    width: 10px;
+}
+
+.syntax-editor::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+.syntax-editor::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 5px;
+}
+
+.syntax-editor::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Export button animation */
+.btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
