@@ -24,14 +24,20 @@ function debounce(func, wait) {
 }
 
 // Generate diagram from prompt
-async function generateDiagram(isIteration = false) {
+async function generateDiagram(forceIteration = false) {
     const prompt = document.getElementById('diagramPrompt').value.trim();
     const diagramType = document.getElementById('diagramType').value;
+    const currentSyntax = document.getElementById('syntaxEditor').value.trim();
     
     if (!prompt) {
         showError('Please enter a description for your diagram');
         return;
     }
+    
+    // Auto-detect if this should be an iteration:
+    // - If we have existing syntax AND we're not forcing a new diagram, iterate
+    // - If syntax is empty OR forceIteration is explicitly false, create new
+    const shouldIterate = forceIteration !== false && currentSyntax.length > 0;
     
     showLoading(true);
     hideError();
@@ -45,7 +51,7 @@ async function generateDiagram(isIteration = false) {
             body: JSON.stringify({
                 prompt: prompt,
                 diagram_type: diagramType,
-                is_iteration: isIteration
+                is_iteration: shouldIterate
             })
         });
         
@@ -68,9 +74,9 @@ async function generateDiagram(isIteration = false) {
     }
 }
 
-// Generate iteration
-async function generateIteration() {
-    await generateDiagram(true);
+// Force new diagram (ignore existing syntax)
+async function generateNewDiagram() {
+    await generateDiagram(false);
 }
 
 // Clear session and start fresh
@@ -147,28 +153,39 @@ function clearDiagramFromLocalStorage() {
     }
 }
 
-// Update iteration UI based on session state
+// Update UI based on current state
 async function updateIterationUI() {
     try {
-        const response = await fetch('/api/session-info');
-        const data = await response.json();
+        const currentSyntax = document.getElementById('syntaxEditor').value.trim();
+        const hasCurrentDiagram = currentSyntax.length > 0;
         
-        if (data.success) {
-            const hasCurrentDiagram = data.has_current_diagram;
-            const iterateBtn = document.getElementById('iterateBtn');
-            const newDiagramBtn = document.getElementById('newDiagramBtn');
-            
-            if (iterateBtn) {
-                iterateBtn.disabled = !hasCurrentDiagram;
-                iterateBtn.title = hasCurrentDiagram ? 'Add to current diagram' : 'No current diagram to iterate on';
-            }
-            
-            if (newDiagramBtn) {
-                newDiagramBtn.disabled = !hasCurrentDiagram;
+        const newDiagramBtn = document.getElementById('newDiagramBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        
+        // Enable "New Diagram" and "Clear All" only when there's existing content
+        if (newDiagramBtn) {
+            newDiagramBtn.disabled = !hasCurrentDiagram;
+            newDiagramBtn.title = hasCurrentDiagram ? 'Create new diagram (ignore current)' : 'No current diagram';
+        }
+        
+        if (clearBtn) {
+            clearBtn.disabled = !hasCurrentDiagram;
+            clearBtn.title = hasCurrentDiagram ? 'Clear everything and start fresh' : 'Nothing to clear';
+        }
+        
+        // Update generate button text based on state
+        if (generateBtn) {
+            if (hasCurrentDiagram) {
+                generateBtn.innerHTML = '<i class="fas fa-plus"></i> Add to Diagram';
+                generateBtn.title = 'Add to existing diagram';
+            } else {
+                generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate';
+                generateBtn.title = 'Create new diagram';
             }
         }
     } catch (error) {
-        console.error('Error updating iteration UI:', error);
+        console.error('Error updating UI:', error);
     }
 }
 
@@ -196,6 +213,7 @@ async function updateDiagram() {
         diagramContainer.innerHTML = svg;
         
         hideError();
+        updateIterationUI(); // Update UI when diagram changes
     } catch (error) {
         console.error('Mermaid error:', error);
         showError(`Syntax error: ${error.message}`);

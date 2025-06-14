@@ -24,28 +24,28 @@
                         </button>
                     </div>
                     
-                    <!-- Iteration Controls -->
+                    <!-- Additional Controls -->
                     <div class="d-flex gap-2 mb-2">
                         <button class="btn btn-outline-primary" 
                                 type="button" 
-                                id="iterateBtn"
-                                onclick="generateIteration()"
+                                id="newDiagramBtn"
+                                onclick="generateNewDiagram()"
                                 disabled
-                                title="Add to current diagram">
-                            <i class="fas fa-plus"></i> Add to Diagram
+                                title="Force create new diagram (ignore current)">
+                            <i class="fas fa-file"></i> New Diagram
                         </button>
                         <button class="btn btn-outline-secondary" 
                                 type="button" 
-                                id="newDiagramBtn"
+                                id="clearBtn"
                                 onclick="clearSession()"
                                 disabled
-                                title="Start new diagram">
-                            <i class="fas fa-file"></i> New Diagram
+                                title="Clear everything and start fresh">
+                            <i class="fas fa-trash"></i> Clear All
                         </button>
                     </div>
                     
                     <small class="text-muted">
-                        Use "Generate" for new diagrams, "Add to Diagram" for iterative changes
+                        "Generate" adds to existing diagram or creates new if empty. "New Diagram" always creates fresh.
                     </small>
                 </div>
                 
