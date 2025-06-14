@@ -89,8 +89,10 @@ class DiagramSession:
     
     def add_to_history(self, syntax: str):
         """Add diagram syntax to history"""
-        if syntax and syntax != self.current_syntax:
-            self.history.append(self.current_syntax)
+        if syntax:
+            # Only add to history if current_syntax is not empty and different
+            if self.current_syntax and syntax != self.current_syntax:
+                self.history.append(self.current_syntax)
             self.current_syntax = syntax
     
     def to_dict(self) -> Dict[str, Any]:
