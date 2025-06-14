@@ -309,18 +309,51 @@ async function exportDiagram() {
             svgClone.insertBefore(styleElement, svgClone.firstChild);
         }
         
-        // Get SVG dimensions
-        const svgWidth = svgClone.getAttribute('width') || svgClone.viewBox.baseVal.width || 800;
-        const svgHeight = svgClone.getAttribute('height') || svgClone.viewBox.baseVal.height || 600;
+        // Get SVG dimensions - try multiple methods to get accurate dimensions
+        let svgWidth, svgHeight;
+        
+        // Method 1: Try explicit width/height attributes
+        const widthAttr = svgClone.getAttribute('width');
+        const heightAttr = svgClone.getAttribute('height');
+        
+        if (widthAttr && heightAttr) {
+            svgWidth = parseFloat(widthAttr.replace('px', ''));
+            svgHeight = parseFloat(heightAttr.replace('px', ''));
+        } else if (svgClone.viewBox && svgClone.viewBox.baseVal) {
+            // Method 2: Use viewBox
+            svgWidth = svgClone.viewBox.baseVal.width;
+            svgHeight = svgClone.viewBox.baseVal.height;
+        } else {
+            // Method 3: Try to get computed dimensions from the displayed SVG
+            const displayedSvg = document.querySelector('#diagramContainer svg');
+            if (displayedSvg) {
+                const rect = displayedSvg.getBoundingClientRect();
+                svgWidth = rect.width;
+                svgHeight = rect.height;
+            } else {
+                // Fallback dimensions
+                svgWidth = 800;
+                svgHeight = 600;
+            }
+        }
+        
+        // Ensure we have reasonable dimensions
+        if (svgWidth < 100) svgWidth = 800;
+        if (svgHeight < 100) svgHeight = 600;
+        
+        // Set explicit dimensions on the SVG to ensure proper scaling
+        svgClone.setAttribute('width', svgWidth);
+        svgClone.setAttribute('height', svgHeight);
+        svgClone.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
         
         // Create canvas
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Set canvas dimensions with scale factor for better quality
+        // Set canvas dimensions (2x for better quality)
         const scale = 2;
-        canvas.width = parseInt(svgWidth) * scale;
-        canvas.height = parseInt(svgHeight) * scale;
+        canvas.width = svgWidth * scale;
+        canvas.height = svgHeight * scale;
         
         // Scale context for high DPI
         ctx.scale(scale, scale);
@@ -336,10 +369,10 @@ async function exportDiagram() {
             try {
                 // Draw white background
                 ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, parseInt(svgWidth), parseInt(svgHeight));
+                ctx.fillRect(0, 0, svgWidth, svgHeight);
                 
-                // Draw the image
-                ctx.drawImage(img, 0, 0, parseInt(svgWidth), parseInt(svgHeight));
+                // Draw the image at correct dimensions
+                ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
                 
                 // Convert to PNG and download
                 canvas.toBlob(function(blob) {
