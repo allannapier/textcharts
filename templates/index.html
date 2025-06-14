@@ -71,7 +71,7 @@
                     <textarea id="syntaxEditor" 
                               class="form-control syntax-editor" 
                               placeholder="Mermaid syntax will appear here..."
-                              oninput="updateDiagramDebounced()"></textarea>
+                              oninput="updateDiagramDebounced(); saveDiagramToLocalStorage()"></textarea>
                     <div id="syntaxError" class="alert alert-danger mt-2 d-none" role="alert"></div>
                 </div>
             </div>

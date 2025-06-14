@@ -56,6 +56,7 @@ async function generateDiagram(isIteration = false) {
             updateDiagram();
             document.getElementById('diagramPrompt').value = ''; // Clear prompt after generation
             updateIterationUI();
+            saveDiagramToLocalStorage();
         } else {
             showError(data.error || 'Failed to generate diagram');
         }
@@ -88,10 +89,61 @@ async function clearSession() {
             updateDiagram();
             updateIterationUI();
             hideError();
+            saveDiagramToLocalStorage();
         } catch (error) {
             console.error('Error clearing session:', error);
             showError('Failed to clear session');
         }
+    }
+}
+
+// Save diagram to localStorage
+function saveDiagramToLocalStorage() {
+    try {
+        const syntaxEditor = document.getElementById('syntaxEditor');
+        const diagramType = document.getElementById('diagramType');
+        
+        const diagramData = {
+            syntax: syntaxEditor.value,
+            diagramType: diagramType.value,
+            timestamp: new Date().toISOString()
+        };
+        
+        localStorage.setItem('texaigram_current_diagram', JSON.stringify(diagramData));
+    } catch (error) {
+        console.log('Failed to save diagram to localStorage:', error);
+        // Fail silently - localStorage might be disabled
+    }
+}
+
+// Load diagram from localStorage
+function loadDiagramFromLocalStorage() {
+    try {
+        const saved = localStorage.getItem('texaigram_current_diagram');
+        if (saved) {
+            const diagramData = JSON.parse(saved);
+            
+            // Only restore if we have syntax
+            if (diagramData.syntax && diagramData.syntax.trim()) {
+                document.getElementById('syntaxEditor').value = diagramData.syntax;
+                document.getElementById('diagramType').value = diagramData.diagramType || 'flowchart';
+                updateDiagram();
+                return true;
+            }
+        }
+    } catch (error) {
+        console.log('Failed to load diagram from localStorage:', error);
+        // Fail silently and continue
+    }
+    return false;
+}
+
+// Clear saved diagram from localStorage
+function clearDiagramFromLocalStorage() {
+    try {
+        localStorage.removeItem('texaigram_current_diagram');
+    } catch (error) {
+        console.log('Failed to clear diagram from localStorage:', error);
     }
 }
 
@@ -189,6 +241,7 @@ function clearSyntax() {
         document.getElementById('syntaxEditor').value = '';
         updateDiagram();
         hideError();
+        saveDiagramToLocalStorage();
     }
 }
 
@@ -368,9 +421,34 @@ document.getElementById('diagramType').addEventListener('change', function() {
 
 // Initial load
 document.addEventListener('DOMContentLoaded', function() {
+    // Try to load saved diagram first
+    const loaded = loadDiagramFromLocalStorage();
+    
     // Focus on the prompt input
     document.getElementById('diagramPrompt').focus();
     
     // Update iteration UI on load
     updateIterationUI();
+    
+    // If we loaded a diagram, show a subtle notification
+    if (loaded) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-info alert-dismissible fade show position-fixed';
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.maxWidth = '300px';
+        alertDiv.innerHTML = `
+            <small><i class="fas fa-info-circle"></i> Restored your previous diagram</small>
+            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 3000);
+    }
 });
