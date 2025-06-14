@@ -58,12 +58,21 @@ def generate_diagram() -> Tuple[Dict[str, Any], int]:
         session_data = session.get('diagram_session', {})
         diagram_session = DiagramSession.from_dict(session_data)
         
-        # For new diagram types or non-iterations, clear session
-        if diagram_request.diagram_type != diagram_session.diagram_type and not diagram_request.is_iteration:
-            diagram_session = DiagramSession(diagram_type=diagram_request.diagram_type)
+        # Determine what previous syntax to use
+        previous_syntax = None
+        if diagram_request.is_iteration:
+            # For iterations, use existing syntax regardless of diagram type
+            previous_syntax = diagram_session.current_syntax
+            logger.info(f"Iteration request - using previous syntax: {len(previous_syntax or '')} chars")
+        else:
+            # For new diagrams, clear session if diagram type changed
+            if diagram_request.diagram_type != diagram_session.diagram_type:
+                logger.info(f"New diagram - clearing session (type changed from {diagram_session.diagram_type} to {diagram_request.diagram_type})")
+                diagram_session = DiagramSession(diagram_type=diagram_request.diagram_type)
+            else:
+                logger.info(f"New diagram - same type ({diagram_request.diagram_type})")
         
-        # Generate diagram syntax with context if iterating
-        previous_syntax = diagram_session.current_syntax if diagram_request.is_iteration else None
+        logger.info(f"Request: is_iteration={diagram_request.is_iteration}, has_previous={bool(previous_syntax)}")
         response = openai_service.generate_diagram_syntax(
             prompt=diagram_request.prompt,
             diagram_type=diagram_request.diagram_type,

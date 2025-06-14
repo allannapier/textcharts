@@ -35,9 +35,18 @@ async function generateDiagram(forceIteration = false) {
     }
     
     // Auto-detect if this should be an iteration:
-    // - If we have existing syntax AND we're not forcing a new diagram, iterate
-    // - If syntax is empty OR forceIteration is explicitly false, create new
+    // - If forceIteration is explicitly false, never iterate (new diagram)
+    // - If we have existing syntax and forceIteration is not false, iterate
+    // - If syntax is empty, create new
     const shouldIterate = forceIteration !== false && currentSyntax.length > 0;
+    
+    console.log('Generate diagram:', {
+        prompt: prompt.substring(0, 50) + '...',
+        currentSyntax: currentSyntax.substring(0, 50) + '...',
+        forceIteration,
+        shouldIterate,
+        syntaxLength: currentSyntax.length
+    });
     
     showLoading(true);
     hideError();
