@@ -89,18 +89,42 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <button class="btn btn-sm btn-success" 
-                            onclick="exportDiagram()"
-                            title="Export as PNG">
-                        <i class="fas fa-download"></i> Export PNG
-                    </button>
+                    <div class="d-flex gap-2">
+                        <!-- Zoom Controls -->
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Zoom controls">
+                            <button type="button" class="btn btn-outline-secondary" 
+                                    onclick="zoomIn()" title="Zoom In">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" 
+                                    onclick="zoomOut()" title="Zoom Out">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" 
+                                    onclick="resetZoom()" title="Reset Zoom">
+                                <i class="fas fa-expand-arrows-alt"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" 
+                                    onclick="fitToScreen()" title="Fit to Screen">
+                                <i class="fas fa-compress-arrows-alt"></i>
+                            </button>
+                        </div>
+                        <button class="btn btn-sm btn-success" 
+                                onclick="exportDiagram()"
+                                title="Export as PNG">
+                            <i class="fas fa-download"></i> Export PNG
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Diagram Display Area -->
                 <div id="diagramContainer" class="diagram-container">
-                    <div class="text-center text-muted mt-5">
-                        <i class="fas fa-project-diagram fa-3x mb-3"></i>
-                        <p>Your diagram will appear here</p>
+                    <div id="zoomIndicator" class="zoom-indicator">100%</div>
+                    <div id="diagramWrapper" class="diagram-wrapper">
+                        <div class="text-center text-muted mt-5">
+                            <i class="fas fa-project-diagram fa-3x mb-3"></i>
+                            <p>Your diagram will appear here</p>
+                        </div>
                     </div>
                 </div>
             </div>

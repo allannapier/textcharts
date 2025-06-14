@@ -10,6 +10,12 @@ mermaid.initialize({
     fontFamily: 'Arial, sans-serif'
 });
 
+// Zoom state
+let currentZoom = 1.0;
+const zoomStep = 0.2;
+const minZoom = 0.1;
+const maxZoom = 5.0;
+
 // Debounce function for real-time updates
 function debounce(func, wait) {
     let timeout;
@@ -201,10 +207,10 @@ async function updateIterationUI() {
 // Update diagram from syntax
 async function updateDiagram() {
     const syntax = document.getElementById('syntaxEditor').value.trim();
-    const diagramContainer = document.getElementById('diagramContainer');
+    const diagramWrapper = document.getElementById('diagramWrapper');
     
     if (!syntax) {
-        diagramContainer.innerHTML = `
+        diagramWrapper.innerHTML = `
             <div class="text-center text-muted mt-5">
                 <i class="fas fa-project-diagram fa-3x mb-3"></i>
                 <p>Your diagram will appear here</p>
@@ -215,11 +221,14 @@ async function updateDiagram() {
     
     try {
         // Clear previous content
-        diagramContainer.innerHTML = '<div id="mermaidDiagram"></div>';
+        diagramWrapper.innerHTML = '<div id="mermaidDiagram"></div>';
         
         // Render the diagram
         const { svg } = await mermaid.render('mermaidDiagram', syntax);
-        diagramContainer.innerHTML = svg;
+        diagramWrapper.innerHTML = svg;
+        
+        // Reset zoom when new diagram is loaded
+        resetZoom();
         
         hideError();
         updateIterationUI(); // Update UI when diagram changes
@@ -231,6 +240,73 @@ async function updateDiagram() {
 
 // Debounced update function for real-time editing
 const updateDiagramDebounced = debounce(updateDiagram, 500);
+
+// Zoom functions
+function applyZoom() {
+    const diagramWrapper = document.getElementById('diagramWrapper');
+    const zoomIndicator = document.getElementById('zoomIndicator');
+    
+    if (diagramWrapper) {
+        diagramWrapper.style.transform = `scale(${currentZoom})`;
+        
+        // Update zoom indicator
+        const percentage = Math.round(currentZoom * 100);
+        zoomIndicator.textContent = `${percentage}%`;
+        
+        // Show zoom indicator temporarily
+        zoomIndicator.classList.add('show');
+        setTimeout(() => {
+            zoomIndicator.classList.remove('show');
+        }, 1500);
+    }
+}
+
+function zoomIn() {
+    if (currentZoom < maxZoom) {
+        currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+        applyZoom();
+    }
+}
+
+function zoomOut() {
+    if (currentZoom > minZoom) {
+        currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+        applyZoom();
+    }
+}
+
+function resetZoom() {
+    currentZoom = 1.0;
+    applyZoom();
+}
+
+function fitToScreen() {
+    const diagramContainer = document.getElementById('diagramContainer');
+    const diagramWrapper = document.getElementById('diagramWrapper');
+    const svg = diagramWrapper.querySelector('svg');
+    
+    if (!svg) return;
+    
+    // Get container and SVG dimensions
+    const containerRect = diagramContainer.getBoundingClientRect();
+    const svgRect = svg.getBoundingClientRect();
+    
+    // Calculate available space (accounting for padding)
+    const availableWidth = containerRect.width - 40; // 20px padding on each side
+    const availableHeight = containerRect.height - 40;
+    
+    // Calculate scale factors
+    const scaleX = availableWidth / (svgRect.width / currentZoom);
+    const scaleY = availableHeight / (svgRect.height / currentZoom);
+    
+    // Use the smaller scale to ensure the entire diagram fits
+    const newZoom = Math.min(scaleX, scaleY, maxZoom);
+    
+    if (newZoom > minZoom) {
+        currentZoom = newZoom;
+        applyZoom();
+    }
+}
 
 // Copy syntax to clipboard
 async function copySyntax() {
@@ -476,6 +552,23 @@ document.getElementById('diagramType').addEventListener('change', function() {
     const syntax = document.getElementById('syntaxEditor').value.trim();
     if (syntax) {
         updateDiagram();
+    }
+});
+
+// Add mouse wheel zoom support
+document.getElementById('diagramContainer').addEventListener('wheel', function(event) {
+    // Only zoom if Ctrl key is pressed (common convention)
+    if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        
+        const delta = event.deltaY > 0 ? -1 : 1;
+        const zoomAmount = delta * 0.1;
+        
+        const newZoom = Math.min(maxZoom, Math.max(minZoom, currentZoom + zoomAmount));
+        if (newZoom !== currentZoom) {
+            currentZoom = newZoom;
+            applyZoom();
+        }
     }
 });
 
