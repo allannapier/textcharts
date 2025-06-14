@@ -1,6 +1,6 @@
 # Mermaid Diagram Builder
 
-A Flask web application that generates Mermaid diagrams from natural language descriptions using OpenAI's GPT-4o-mini model..
+A Flask web application that generates Mermaid diagrams from natural language descriptions using OpenAI's GPT-4o-mini model.
 
 ## Features
 
