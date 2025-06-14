@@ -1,4 +1,4 @@
-# Mermaid Diagram Builder
+# TexAIgram
 
 A Flask web application that generates Mermaid diagrams from natural language descriptions using OpenAI's GPT-4o-mini model.
 
@@ -51,8 +51,8 @@ The application follows a modular architecture with clear separation of concerns
 1. Clone the repository:
 ```bash
 cd C:\Users\anapi\code
-git clone <repository-url> mermaid-diagram-builder
-cd mermaid-diagram-builder
+git clone <repository-url> texaigram
+cd texaigram
 ```
 
 2. Create a virtual environment:

@@ -294,7 +294,7 @@ async function exportDiagram() {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `mermaid_diagram_${new Date().getTime()}.png`;
+                        a.download = `texaigram_${new Date().getTime()}.png`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
