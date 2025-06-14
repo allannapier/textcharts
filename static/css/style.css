@@ -15,24 +15,66 @@ main {
     padding: 0;
 }
 
-.row.h-100 {
-    margin: 0;
-}
 
 /* Panels */
 .left-panel, .right-panel {
     height: 100%;
     padding: 0;
     overflow: hidden;
+    flex: 1;
 }
 
 .left-panel {
     background-color: #f8f9fa;
     border-right: 1px solid #dee2e6;
+    min-width: 300px;
+    max-width: 80%;
 }
 
 .right-panel {
     background-color: #ffffff;
+    min-width: 20%;
+}
+
+/* Resizer */
+.resizer {
+    width: 8px;
+    background-color: #dee2e6;
+    cursor: col-resize;
+    position: relative;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease;
+}
+
+.resizer:hover {
+    background-color: #0d6efd;
+}
+
+.resizer:active {
+    background-color: #0b5ed7;
+}
+
+.resizer::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 30px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 1px;
+}
+
+.resizer:hover::before {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Update row to use flexbox for proper resizing */
+.row.h-100 {
+    margin: 0;
+    display: flex !important;
+    flex-wrap: nowrap;
 }
 
 .panel-content {
@@ -93,6 +135,12 @@ main {
     min-height: 100%;
     transition: transform 0.2s ease;
     transform-origin: center center;
+    cursor: grab;
+}
+
+.diagram-wrapper.panning {
+    cursor: grabbing;
+    transition: none;
 }
 
 .diagram-container svg {
@@ -150,10 +198,16 @@ main {
 @media (max-width: 768px) {
     .left-panel, .right-panel {
         height: 50vh;
+        min-width: unset;
+        max-width: unset;
     }
     
     .row.h-100 {
-        flex-direction: column;
+        flex-direction: column !important;
+    }
+    
+    .resizer {
+        display: none;
     }
     
     .syntax-section {

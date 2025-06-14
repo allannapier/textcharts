@@ -10,11 +10,25 @@ mermaid.initialize({
     fontFamily: 'Arial, sans-serif'
 });
 
-// Zoom state
+// Zoom and pan state
 let currentZoom = 1.0;
+let panX = 0;
+let panY = 0;
 const zoomStep = 0.2;
 const minZoom = 0.1;
 const maxZoom = 5.0;
+
+// Pan state
+let isPanning = false;
+let startX = 0;
+let startY = 0;
+let startPanX = 0;
+let startPanY = 0;
+
+// Resizer state
+let isResizing = false;
+let startMouseX = 0;
+let startLeftWidth = 0;
 
 // Debounce function for real-time updates
 function debounce(func, wait) {
@@ -241,13 +255,13 @@ async function updateDiagram() {
 // Debounced update function for real-time editing
 const updateDiagramDebounced = debounce(updateDiagram, 500);
 
-// Zoom functions
-function applyZoom() {
+// Apply zoom and pan transformations
+function applyTransform() {
     const diagramWrapper = document.getElementById('diagramWrapper');
     const zoomIndicator = document.getElementById('zoomIndicator');
     
     if (diagramWrapper) {
-        diagramWrapper.style.transform = `scale(${currentZoom})`;
+        diagramWrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
         
         // Update zoom indicator
         const percentage = Math.round(currentZoom * 100);
@@ -264,20 +278,22 @@ function applyZoom() {
 function zoomIn() {
     if (currentZoom < maxZoom) {
         currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
-        applyZoom();
+        applyTransform();
     }
 }
 
 function zoomOut() {
     if (currentZoom > minZoom) {
         currentZoom = Math.max(minZoom, currentZoom - zoomStep);
-        applyZoom();
+        applyTransform();
     }
 }
 
 function resetZoom() {
     currentZoom = 1.0;
-    applyZoom();
+    panX = 0;
+    panY = 0;
+    applyTransform();
 }
 
 function fitToScreen() {
@@ -304,7 +320,9 @@ function fitToScreen() {
     
     if (newZoom > minZoom) {
         currentZoom = newZoom;
-        applyZoom();
+        panX = 0;
+        panY = 0;
+        applyTransform();
     }
 }
 
@@ -567,10 +585,188 @@ document.getElementById('diagramContainer').addEventListener('wheel', function(e
         const newZoom = Math.min(maxZoom, Math.max(minZoom, currentZoom + zoomAmount));
         if (newZoom !== currentZoom) {
             currentZoom = newZoom;
-            applyZoom();
+            applyTransform();
         }
     }
 });
+
+// Add pan functionality
+function setupPanControls() {
+    const diagramWrapper = document.getElementById('diagramWrapper');
+    
+    if (!diagramWrapper) return;
+    
+    // Mouse events for panning
+    diagramWrapper.addEventListener('mousedown', function(event) {
+        // Only pan if there's a diagram and we're not clicking on a diagram element
+        const svg = diagramWrapper.querySelector('svg');
+        if (!svg) return;
+        
+        // Prevent text selection and other default behaviors
+        event.preventDefault();
+        
+        isPanning = true;
+        startX = event.clientX;
+        startY = event.clientY;
+        startPanX = panX;
+        startPanY = panY;
+        
+        diagramWrapper.classList.add('panning');
+    });
+    
+    document.addEventListener('mousemove', function(event) {
+        if (!isPanning) return;
+        
+        event.preventDefault();
+        
+        const deltaX = event.clientX - startX;
+        const deltaY = event.clientY - startY;
+        
+        panX = startPanX + deltaX;
+        panY = startPanY + deltaY;
+        
+        applyTransform();
+    });
+    
+    document.addEventListener('mouseup', function() {
+        if (isPanning) {
+            isPanning = false;
+            const diagramWrapper = document.getElementById('diagramWrapper');
+            if (diagramWrapper) {
+                diagramWrapper.classList.remove('panning');
+            }
+        }
+    });
+    
+    // Touch events for mobile panning
+    diagramWrapper.addEventListener('touchstart', function(event) {
+        const svg = diagramWrapper.querySelector('svg');
+        if (!svg || event.touches.length !== 1) return;
+        
+        event.preventDefault();
+        
+        isPanning = true;
+        const touch = event.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        startPanX = panX;
+        startPanY = panY;
+        
+        diagramWrapper.classList.add('panning');
+    });
+    
+    document.addEventListener('touchmove', function(event) {
+        if (!isPanning || event.touches.length !== 1) return;
+        
+        event.preventDefault();
+        
+        const touch = event.touches[0];
+        const deltaX = touch.clientX - startX;
+        const deltaY = touch.clientY - startY;
+        
+        panX = startPanX + deltaX;
+        panY = startPanY + deltaY;
+        
+        applyTransform();
+    });
+    
+    document.addEventListener('touchend', function() {
+        if (isPanning) {
+            isPanning = false;
+            const diagramWrapper = document.getElementById('diagramWrapper');
+            if (diagramWrapper) {
+                diagramWrapper.classList.remove('panning');
+            }
+        }
+    });
+}
+
+// Setup resizer functionality
+function setupResizer() {
+    const resizer = document.getElementById('resizer');
+    const leftPanel = document.getElementById('leftPanel');
+    const rightPanel = document.getElementById('rightPanel');
+    const container = leftPanel.parentElement;
+    
+    if (!resizer || !leftPanel || !rightPanel) return;
+    
+    resizer.addEventListener('mousedown', function(event) {
+        isResizing = true;
+        startMouseX = event.clientX;
+        startLeftWidth = leftPanel.offsetWidth;
+        
+        // Prevent text selection during resize
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+        
+        event.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', function(event) {
+        if (!isResizing) return;
+        
+        event.preventDefault();
+        
+        const deltaX = event.clientX - startMouseX;
+        const containerWidth = container.offsetWidth;
+        const resizerWidth = resizer.offsetWidth;
+        
+        let newLeftWidth = startLeftWidth + deltaX;
+        
+        // Apply constraints
+        const minLeftWidth = 300; // Minimum 300px for syntax panel
+        const maxLeftWidth = containerWidth - resizerWidth - (containerWidth * 0.2); // Leave at least 20% for diagram
+        
+        newLeftWidth = Math.max(minLeftWidth, Math.min(maxLeftWidth, newLeftWidth));
+        
+        const leftPercentage = (newLeftWidth / containerWidth) * 100;
+        const rightPercentage = ((containerWidth - newLeftWidth - resizerWidth) / containerWidth) * 100;
+        
+        // Update panel widths
+        leftPanel.style.flex = `0 0 ${leftPercentage}%`;
+        rightPanel.style.flex = `0 0 ${rightPercentage}%`;
+        
+        // Save the layout preference
+        localStorage.setItem('texaigram_layout', JSON.stringify({
+            leftPercentage,
+            rightPercentage
+        }));
+    });
+    
+    document.addEventListener('mouseup', function() {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+        }
+    });
+    
+    // Prevent text selection when dragging over panels
+    document.addEventListener('selectstart', function(event) {
+        if (isResizing) {
+            event.preventDefault();
+        }
+    });
+}
+
+// Load saved layout
+function loadSavedLayout() {
+    try {
+        const saved = localStorage.getItem('texaigram_layout');
+        if (saved) {
+            const layout = JSON.parse(saved);
+            const leftPanel = document.getElementById('leftPanel');
+            const rightPanel = document.getElementById('rightPanel');
+            
+            if (leftPanel && rightPanel && layout.leftPercentage && layout.rightPercentage) {
+                leftPanel.style.flex = `0 0 ${layout.leftPercentage}%`;
+                rightPanel.style.flex = `0 0 ${layout.rightPercentage}%`;
+            }
+        }
+    } catch (error) {
+        console.log('Failed to load saved layout:', error);
+    }
+}
 
 // Initial load
 document.addEventListener('DOMContentLoaded', function() {
@@ -582,6 +778,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update iteration UI on load
     updateIterationUI();
+    
+    // Setup pan controls
+    setupPanControls();
+    
+    // Setup resizer
+    setupResizer();
+    
+    // Load saved layout
+    loadSavedLayout();
     
     // If we loaded a diagram, show a subtle notification
     if (loaded) {
