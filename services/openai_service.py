@@ -89,7 +89,8 @@ class OpenAIService:
         """
         base_prompt = """You are a Mermaid diagram syntax generator. 
 You MUST respond with ONLY valid Mermaid syntax - no explanations, no markdown code blocks, no additional text.
-Generate clean, well-structured Mermaid syntax based on the user's description."""
+Generate clean, well-structured Mermaid syntax based EXACTLY on the user's description.
+IMPORTANT: Only include the steps, elements, or components that the user explicitly mentions. Do NOT add any additional steps, elements, or details that are not specifically requested by the user."""
 
         type_specific_prompts = {
             'flowchart': """
