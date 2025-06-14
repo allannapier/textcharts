@@ -217,54 +217,111 @@ async function exportDiagram() {
         // Get the SVG element
         const svgElement = tempContainer.querySelector('svg');
         
-        // Convert SVG to PNG
+        // Clean SVG to remove external references that cause CORS issues
+        const svgClone = svgElement.cloneNode(true);
+        
+        // Remove any external image references
+        const images = svgClone.querySelectorAll('image');
+        images.forEach(img => img.remove());
+        
+        // Inline any styles to avoid CORS issues
+        const styleSheets = Array.from(document.styleSheets);
+        let inlineStyles = '';
+        
+        try {
+            styleSheets.forEach(sheet => {
+                if (sheet.href && sheet.href.includes('mermaid')) {
+                    // Skip external mermaid stylesheets that might cause CORS
+                    return;
+                }
+                try {
+                    const rules = sheet.cssRules || sheet.rules;
+                    if (rules) {
+                        Array.from(rules).forEach(rule => {
+                            inlineStyles += rule.cssText + '\n';
+                        });
+                    }
+                } catch (e) {
+                    // Skip inaccessible stylesheets
+                }
+            });
+        } catch (e) {
+            // Continue without inline styles if there are issues
+        }
+        
+        // Add inline styles to SVG
+        if (inlineStyles) {
+            const styleElement = document.createElement('style');
+            styleElement.textContent = inlineStyles;
+            svgClone.insertBefore(styleElement, svgClone.firstChild);
+        }
+        
+        // Get SVG dimensions
+        const svgWidth = svgClone.getAttribute('width') || svgClone.viewBox.baseVal.width || 800;
+        const svgHeight = svgClone.getAttribute('height') || svgClone.viewBox.baseVal.height || 600;
+        
+        // Create canvas
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Get SVG dimensions
-        const svgWidth = svgElement.getAttribute('width') || svgElement.viewBox.baseVal.width;
-        const svgHeight = svgElement.getAttribute('height') || svgElement.viewBox.baseVal.height;
+        // Set canvas dimensions with scale factor for better quality
+        const scale = 2;
+        canvas.width = parseInt(svgWidth) * scale;
+        canvas.height = parseInt(svgHeight) * scale;
         
-        // Set canvas dimensions
-        canvas.width = parseInt(svgWidth) * 2; // 2x for better quality
-        canvas.height = parseInt(svgHeight) * 2;
+        // Scale context for high DPI
+        ctx.scale(scale, scale);
         
-        // Create image from SVG
-        const svgData = new XMLSerializer().serializeToString(svgElement);
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        const svgUrl = URL.createObjectURL(svgBlob);
+        // Create data URL from cleaned SVG
+        const svgData = new XMLSerializer().serializeToString(svgClone);
+        const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
         
         const img = new Image();
+        img.crossOrigin = 'anonymous'; // Handle CORS
+        
         img.onload = function() {
-            // Draw white background
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw the image
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-            // Convert to PNG and download
-            canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `diagram_${new Date().getTime()}.png`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 'image/png');
+            try {
+                // Draw white background
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, parseInt(svgWidth), parseInt(svgHeight));
+                
+                // Draw the image
+                ctx.drawImage(img, 0, 0, parseInt(svgWidth), parseInt(svgHeight));
+                
+                // Convert to PNG and download
+                canvas.toBlob(function(blob) {
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `mermaid_diagram_${new Date().getTime()}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    } else {
+                        showError('Failed to create image blob');
+                    }
+                }, 'image/png');
+            } catch (canvasError) {
+                console.error('Canvas error:', canvasError);
+                showError('Failed to render diagram to canvas');
+            }
             
             // Cleanup
-            URL.revokeObjectURL(svgUrl);
             document.body.removeChild(tempContainer);
         };
         
-        img.src = svgUrl;
+        img.onerror = function() {
+            showError('Failed to load diagram for export');
+            document.body.removeChild(tempContainer);
+        };
+        
+        img.src = svgDataUrl;
         
     } catch (error) {
         console.error('Export error:', error);
-        showError('Failed to export diagram');
+        showError('Failed to export diagram: ' + error.message);
     } finally {
         showLoading(false);
     }
