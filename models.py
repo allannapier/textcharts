@@ -3,7 +3,7 @@ Data models for the Mermaid Diagram Builder
 """
 
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 
@@ -12,6 +12,7 @@ class DiagramRequest:
     """Model for diagram generation request"""
     prompt: str
     diagram_type: str
+    is_iteration: bool = False
     
     def validate(self) -> tuple[bool, Optional[str]]:
         """
@@ -73,3 +74,38 @@ class ValidationResult:
             'error': self.error,
             'line_number': self.line_number
         }
+
+
+@dataclass 
+class DiagramSession:
+    """Model for tracking diagram session state"""
+    current_syntax: str = ""
+    diagram_type: str = "flowchart"
+    history: List[str] = None
+    
+    def __post_init__(self):
+        if self.history is None:
+            self.history = []
+    
+    def add_to_history(self, syntax: str):
+        """Add diagram syntax to history"""
+        if syntax and syntax != self.current_syntax:
+            self.history.append(self.current_syntax)
+            self.current_syntax = syntax
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for session storage"""
+        return {
+            'current_syntax': self.current_syntax,
+            'diagram_type': self.diagram_type,
+            'history': self.history
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DiagramSession':
+        """Create from dictionary"""
+        return cls(
+            current_syntax=data.get('current_syntax', ''),
+            diagram_type=data.get('diagram_type', 'flowchart'),
+            history=data.get('history', [])
+        )

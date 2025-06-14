@@ -23,6 +23,30 @@
                             <i class="fas fa-magic"></i> Generate
                         </button>
                     </div>
+                    
+                    <!-- Iteration Controls -->
+                    <div class="d-flex gap-2 mb-2">
+                        <button class="btn btn-outline-primary" 
+                                type="button" 
+                                id="iterateBtn"
+                                onclick="generateIteration()"
+                                disabled
+                                title="Add to current diagram">
+                            <i class="fas fa-plus"></i> Add to Diagram
+                        </button>
+                        <button class="btn btn-outline-secondary" 
+                                type="button" 
+                                id="newDiagramBtn"
+                                onclick="clearSession()"
+                                disabled
+                                title="Start new diagram">
+                            <i class="fas fa-file"></i> New Diagram
+                        </button>
+                    </div>
+                    
+                    <small class="text-muted">
+                        Use "Generate" for new diagrams, "Add to Diagram" for iterative changes
+                    </small>
                 </div>
                 
                 <!-- Syntax Display/Edit Section -->

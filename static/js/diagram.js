@@ -24,7 +24,7 @@ function debounce(func, wait) {
 }
 
 // Generate diagram from prompt
-async function generateDiagram() {
+async function generateDiagram(isIteration = false) {
     const prompt = document.getElementById('diagramPrompt').value.trim();
     const diagramType = document.getElementById('diagramType').value;
     
@@ -44,7 +44,8 @@ async function generateDiagram() {
             },
             body: JSON.stringify({
                 prompt: prompt,
-                diagram_type: diagramType
+                diagram_type: diagramType,
+                is_iteration: isIteration
             })
         });
         
@@ -53,6 +54,8 @@ async function generateDiagram() {
         if (data.success) {
             document.getElementById('syntaxEditor').value = data.syntax;
             updateDiagram();
+            document.getElementById('diagramPrompt').value = ''; // Clear prompt after generation
+            updateIterationUI();
         } else {
             showError(data.error || 'Failed to generate diagram');
         }
@@ -61,6 +64,59 @@ async function generateDiagram() {
         showError('An error occurred while generating the diagram');
     } finally {
         showLoading(false);
+    }
+}
+
+// Generate iteration
+async function generateIteration() {
+    await generateDiagram(true);
+}
+
+// Clear session and start fresh
+async function clearSession() {
+    if (confirm('Are you sure you want to start a new diagram? This will clear your current work.')) {
+        try {
+            await fetch('/api/clear-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            document.getElementById('syntaxEditor').value = '';
+            document.getElementById('diagramPrompt').value = '';
+            updateDiagram();
+            updateIterationUI();
+            hideError();
+        } catch (error) {
+            console.error('Error clearing session:', error);
+            showError('Failed to clear session');
+        }
+    }
+}
+
+// Update iteration UI based on session state
+async function updateIterationUI() {
+    try {
+        const response = await fetch('/api/session-info');
+        const data = await response.json();
+        
+        if (data.success) {
+            const hasCurrentDiagram = data.has_current_diagram;
+            const iterateBtn = document.getElementById('iterateBtn');
+            const newDiagramBtn = document.getElementById('newDiagramBtn');
+            
+            if (iterateBtn) {
+                iterateBtn.disabled = !hasCurrentDiagram;
+                iterateBtn.title = hasCurrentDiagram ? 'Add to current diagram' : 'No current diagram to iterate on';
+            }
+            
+            if (newDiagramBtn) {
+                newDiagramBtn.disabled = !hasCurrentDiagram;
+            }
+        }
+    } catch (error) {
+        console.error('Error updating iteration UI:', error);
     }
 }
 
@@ -257,4 +313,7 @@ document.getElementById('diagramType').addEventListener('change', function() {
 document.addEventListener('DOMContentLoaded', function() {
     // Focus on the prompt input
     document.getElementById('diagramPrompt').focus();
+    
+    // Update iteration UI on load
+    updateIterationUI();
 });

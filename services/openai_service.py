@@ -28,13 +28,14 @@ class OpenAIService:
             self.client = OpenAI(api_key=api_key)
         return self.client
     
-    def generate_diagram_syntax(self, prompt: str, diagram_type: str) -> DiagramResponse:
+    def generate_diagram_syntax(self, prompt: str, diagram_type: str, previous_syntax: Optional[str] = None) -> DiagramResponse:
         """
         Generate Mermaid diagram syntax from natural language prompt
         
         Args:
             prompt: Natural language description of the diagram
             diagram_type: Type of diagram to generate
+            previous_syntax: Previous diagram syntax for iterative updates
             
         Returns:
             DiagramResponse with generated syntax or error
@@ -45,12 +46,17 @@ class OpenAIService:
             # Construct the system prompt
             system_prompt = self._get_system_prompt(diagram_type)
             
+            # Prepare user message with context if iterating
+            user_message = prompt
+            if previous_syntax:
+                user_message = f"Here is the current diagram:\n\n{previous_syntax}\n\nNow modify it based on this request: {prompt}"
+            
             # Make API call using official OpenAI client
             response = client.chat.completions.create(
                 model=current_app.config['OPENAI_MODEL'],
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": user_message}
                 ],
                 temperature=current_app.config['OPENAI_TEMPERATURE'],
                 max_tokens=current_app.config['OPENAI_MAX_TOKENS']
